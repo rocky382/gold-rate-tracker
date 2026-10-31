@@ -3,7 +3,7 @@ name: Daily Gold Rate Scraper
 on:
   schedule:
     # Runs at 06:00 UTC (10:00 AM Oman time) every single day
-    - cron: '22 12 * * *'
+    - cron: '272 12 * * *'
   workflow_dispatch: # Allows you to manually click "Run" anytime to test it
 
 permissions:
