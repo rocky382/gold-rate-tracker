@@ -1,1 +1,37 @@
+name: Daily Gold Rate Scraper
 
+on:
+  schedule:
+    # Runs at 06:00 UTC (10:00 AM Oman time) every single day
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allows you to manually click "Run" anytime to test it
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Run collector script
+        run: python collector.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "Gold Tracker Bot"
+          git config --global user.email "bot@github.com"
+          git add rates.csv
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update daily gold rates [skip ci]" && git push)
