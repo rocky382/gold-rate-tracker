@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oman Gold Rate Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #f59e0b;
+      margin-bottom: 25px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .card {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+    .card h3 {
+      margin: 0;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .card p {
+      margin: 8px 0 0;
+      font-size: 24px;
+      font-weight: bold;
+      color: #fbbf24;
+    }
+    .chart-container {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+    }
+    .filters {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    button {
+      background: #334155;
+      color: #f8fafc;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button.active {
+      background: #f59e0b;
+      color: #0f172a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📈 Oman Gold Rate Trend (Joyalukkas)</h1>
+
+    <div class="cards">
+      <div class="card">
+        <h3>24KT GOLD RATE</h3>
+        <p id="card-24k">--</p>
+      </div>
+      <div class="card">
+        <h3>22KT GOLD RATE</h3>
+        <p id="card-22k">--</p>
+      </div>
+      <div class="card">
+        <h3>18KT GOLD RATE</h3>
+        <p id="card-18k">--</p>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="filters">
+        <button onclick="filterRange(7, this)">7 Days</button>
+        <button onclick="filterRange(30, this)">30 Days</button>
+        <button onclick="filterRange(365, this)">1 Year</button>
+        <button class="active" onclick="filterRange('all', this)">All Time</button>
+      </div>
+      <canvas id="rateChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let rawData = [];
+    let chart;
+
+    // Fetch rates.csv automatically
+    Papa.parse("rates.csv", {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: function(results) {
+        rawData = results.data.filter(r => r.date);
+        
+        if (rawData.length > 0) {
+          const latest = rawData[rawData.length - 1];
+          document.getElementById("card-24k").innerText = latest.rate_24k + " OMR";
+          document.getElementById("card-22k").innerText = latest.rate_22k + " OMR";
+          document.getElementById("card-18k").innerText = latest.rate_18k + " OMR";
+          renderChart(rawData);
+        }
+      }
+    });
+
+    function renderChart(data) {
+      const ctx = document.getElementById('rateChart').getContext('2d');
+      const labels = data.map(r => r.date);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '24K Rate',
+              data: data.map(r => r.rate_24k),
+              borderColor: '#f59e0b',
+              backgroundColor: '#f59e0b',
+              tension: 0.2
+            },
+            {
+              label: '22K Rate',
+              data: data.map(r => r.rate_22k),
+              borderColor: '#38bdf8',
+              backgroundColor: '#38bdf8',
+              tension: 0.2
+            },
+            {
+              label: '18K Rate',
+              data: data.map(r => r.rate_18k),
+              borderColor: '#a855f7',
+              backgroundColor: '#a855f7',
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+          },
+          plugins: {
+            legend: { labels: { color: '#f8fafc' } }
+          }
+        }
+      });
+    }
+
+    function filterRange(days, btn) {
+      document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (days === 'all') {
+        renderChart(rawData);
+      } else {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const filtered = rawData.filter(r => new Date(r.date) >= cutoff);
+        renderChart(filtered);
+      }
+    }
+  </script>
+</body>
+</html>
